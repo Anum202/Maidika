@@ -1,54 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
-import { createUserTable, insertUser } from '../database/sqlite-database';
 import Colors from '../constants/Colors';
 import TextInputComponent from '../components/TextInputComponent';
+import { updateUser } from '../database/sqlite-database';
 
-const RegisterScreen = ({ navigation }) => {
+const ModifyInformation = () => {
     const [name, onChangeName] = useState('');
     const [fName, onChangeFName] = useState('');
-    const [email, onChangeEmail] = useState('');
-    const [phone, onChangePhone] = useState('');
     const [pass, onChangePass] = useState('');
-    const [cpass, onChangeCPass] = useState('');
     const [avatar, setAvatar] = useState(null);
 
     const [nameError, setNameError] = useState('');
     const [fNameError, setFNameError] = useState('');
-    const [emailError, setEmailError] = useState('');
-    const [phoneError, setPhoneError] = useState('');
     const [passError, setPassError] = useState('');
-    const [cpassError, setCPassError] = useState('');
-    const emailRegex = /\S+@\S+\.\S+/;
 
-    //user table is created whenever screen is rendered.
-    useEffect(() => {
-        createUserTable();
-        const unsubscribe = navigation.addListener('focus', () => {
-            onChangeName('');
-            onChangeFName('');
-            onChangeEmail('');
-            onChangePhone('');
-            onChangePass('');
-            onChangeCPass('');
-            setAvatar(null);
-            setNameError('');
-            setFNameError('');
-            setEmailError('');
-            setPhoneError('');
-            setPassError('');
-            setCPassError('');
-        });
-        return unsubscribe;
-    }, [navigation]);
-
-    //validations for empty input fields.
     const handleNameChange = (text) => {
         onChangeName(text);
-        if (text.trim() === "") {
+        if (text.trim === "") {
             setNameError("Le nom est requis !");
         }
         else {
@@ -57,53 +28,23 @@ const RegisterScreen = ({ navigation }) => {
     }
     const handleFNameChange = (text) => {
         onChangeFName(text);
-        if (text.trim() === "") {
+        if (text.trim === "") {
             setFNameError("Le prénom est requis !");
         }
         else {
             setFNameError("");
         }
     }
-    const handleEmailChange = (text) => {
-        onChangeEmail(text);
-        if (text.trim() === "") {
-            setEmailError("Le e-mail est requis !");
-        } else if (!emailRegex.test(text)) {
-            setEmailError("Adresse e-mail invalide !");
-        } else {
-            setEmailError("");
-        }
-    }
-
-    const handlePhoneChange = (text) => {
-        onChangePhone(text);
-        if (text.trim() === "") {
-            setPhoneError("Le téléphone est requis !");
-        }
-        else {
-            setPhoneError("");
-        }
-    }
     const handlePassChange = (text) => {
         onChangePass(text);
-        if (text.trim() === "") {
+        if (text.trim === "") {
             setPassError("Mot de passe requis !");
         }
         else {
             setPassError("");
         }
     }
-    const handleCPassChange = (text) => {
-        onChangeCPass(text);
-        if (text.trim() === "") {
-            setCPassError("Confirmez que le mot de passe est requis !");
-        }
-        else {
-            setCPassError("");
-        }
-    }
 
-    //function to handle input validations when button is pressed.
     const handleValidation = () => {
         let isValid = true;
 
@@ -119,67 +60,29 @@ const RegisterScreen = ({ navigation }) => {
         } else {
             setFNameError("");
         }
-        if (email.trim() === "") {
-            setEmailError("Le e-mail est requis !");
-            isValid = false;
-        } else if (!emailRegex.test(email)) {
-            setEmailError("Adresse e-mail invalide !");
-            isValid = false;
-        } else {
-            setEmailError("");
-        }
-        if (phone.trim() === "") {
-            setPhoneError("Le téléphone est requis !");
-            isValid = false;
-        } else {
-            setPhoneError("");
-        }
         if (pass.trim() === "") {
             setPassError("Mot de passe requis !");
             isValid = false;
         } else {
             setPassError("");
         }
-        if (cpass.trim() === "") {
-            setCPassError("Confirmez que le mot de passe est requis !");
-            isValid = false;
-        } else {
-            setCPassError("");
-        }
-
-        // if (!avatar) {
-        //     console.error('Profile Image URI is null');
-        //     isValid = false;
-        //     Alert.alert('Error', 'Veuillez sélectionner une image de profil.', [{ text: 'OK' }]);
-        // }
-
-        if (isValid) {
-            // console.log('Profile Image URI:', avatar);
-            if (isValid) {
-                insertUser(name, fName, email, phone, pass, cpass)
-                    .then(({ id, data }) => {
-                        console.log('Inserted ID:', id);
-                        console.log('Inserted data:', data);
-
-                        Alert.alert('Success', 'Utilisateur enregistré avec succès !', [
-                            {
-                                text: 'OK',
-                                onPress: () => {
-                                    navigation.navigate('Login');
-                                }
-                            },
-                        ]);
-                    })
-                    .catch((error) => {
-                        console.error('Error inserting data:', error);
-                        Alert.alert('Error', "Échec de l'enregistrement. Veuillez réessayer !", [
-                            { text: 'OK' },
-                        ]);
-                    });
-            }
-        }
         return isValid;
     }
+
+    //function to handle form submission
+    const handleUpdateUser = async () => {
+        if (handleValidation()) {
+            try {
+                //calling the updateUser function with updated information
+                await updateUser(name, fName, pass);
+                Alert.alert("User information updated successfully!");
+            } catch (error) {
+                Alert.alert("Error updating user information!");
+            }
+        } else {
+            Alert.alert("Merci de remplir tous les champs obligatoires !");
+        }
+    };
 
     //function to handle image picker logic.
     const handleImagePicker = async () => {
@@ -204,7 +107,7 @@ const RegisterScreen = ({ navigation }) => {
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.headerContainer}>
                 <Image source={require('../assets/images/Maidika-logo.png')} style={styles.logoStyles} />
-                <Text style={styles.textStyles}>Inscription</Text>
+                <Text style={styles.textStyles}>Modifier les informations</Text>
             </View>
             <View style={styles.bodyContainer}>
                 <View style={styles.formContainer}>
@@ -247,28 +150,6 @@ const RegisterScreen = ({ navigation }) => {
                         style={styles.inputField}
                     />
                     {fNameError !== "" && <Text style={styles.errorText}>{fNameError}</Text>}
-                    <Text style={styles.labelText}>Email</Text>
-                    <TextInputComponent
-                        placeholder='Votre email'
-                        autocapitalize='none'
-                        keyboardType='email-address'
-                        secureTextEntry={false}
-                        value={email}
-                        onChangeText={handleEmailChange}
-                        style={styles.inputField}
-                    />
-                    {emailError !== "" && <Text style={styles.errorText}>{emailError}</Text>}
-                    <Text style={styles.labelText}>Numéro de téléphone</Text>
-                    <TextInputComponent
-                        placeholder='Votre numéro de téléphone'
-                        autocapitalize='none'
-                        keyboardType='phone-pad'
-                        secureTextEntry={false}
-                        value={phone}
-                        onChangeText={handlePhoneChange}
-                        style={styles.inputField}
-                    />
-                    {phoneError !== "" && <Text style={styles.errorText}>{phoneError}</Text>}
                     <Text style={styles.labelText}>Mot de passe:</Text>
                     <TextInputComponent
                         placeholder='Entrez votre mot de passe'
@@ -280,34 +161,15 @@ const RegisterScreen = ({ navigation }) => {
                         style={styles.inputField}
                     />
                     {passError !== "" && <Text style={styles.errorText}>{passError}</Text>}
-                    <Text style={styles.labelText}>Confirmation votre mot de passe</Text>
-                    <TextInputComponent
-                        placeholder='Retaper votre mot de passe'
-                        autocapitalize='none'
-                        keyboardType='default'
-                        secureTextEntry={true}
-                        value={cpass}
-                        onChangeText={handleCPassChange}
-                        style={styles.inputField}
-                    />
-                    {cpassError !== "" && <Text style={styles.errorText}>{cpassError}</Text>}
                 </View>
-                <TouchableOpacity style={styles.btnContainer} onPress={() => {
-                    if (handleValidation()) {
-                        navigation.navigate('Login')
-                    }
-                    else {
-                        Alert.alert("Merci de remplir tous les champs obligatoires !")
-                    }
-                }}>
-                    <Text style={styles.textStyle}>S'inscrire</Text>
+                <TouchableOpacity style={styles.btnContainer} onPress={handleUpdateUser}>
+                    <Text style={styles.textStyle}>Modifier</Text>
                 </TouchableOpacity>
             </View>
-        </ScrollView >
-    );
-}
-
-export default RegisterScreen;
+        </ScrollView>
+    )
+};
+export default ModifyInformation;
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
@@ -328,7 +190,7 @@ const styles = StyleSheet.create({
         marginHorizontal: windowWidth * 0.4,
     },
     textStyles: {
-        fontSize: 30,
+        fontSize: 20,
         color: 'white',
         marginTop: windowHeight * 0.04,
         textAlign: 'center',
